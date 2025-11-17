@@ -13,9 +13,6 @@ pipeline{
   
     stages{
         stage('Build'){
-          when {
-            branch 'develop'
-          }
             steps {
                 sh 'dotnet restore'
                 sh 'dotnet publish -o ${ARTIFACT_DIR}/${BUILD_NUMBER}'
