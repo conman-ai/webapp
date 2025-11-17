@@ -8,7 +8,7 @@ pipeline{
         
     }
     parameters{
-         string(name: 'ARTIFACT_ID', defaultValue: '14', description: 'Select the deployment artifact')
+         string(name: 'ARTIFACT_ID', defaultValue: '1', description: 'Select the deployment artifact')
     }
   
     stages{
