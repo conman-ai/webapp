@@ -2,7 +2,7 @@ pipeline{
     agent any
     
     environment {
-        ARTIFACT_DIR = "/opt/aspnetapp/release'
+        ARTIFACT_DIR = "/opt/aspnetapp/release"
         DEPLOY_DIR = "/opt/aspnetapp/deploy"
        
         
