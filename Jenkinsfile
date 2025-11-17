@@ -50,7 +50,7 @@ pipeline{
         
         
     }
-post{
+/* post{
     success {
             mail bcc: '', 
                  body: "The Jenkins build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. View details: ${env.BUILD_URL}", 
@@ -69,5 +69,5 @@ post{
                  to: 'adarshkumar4ce@gmail.com'
         }
 
-    }
+    } */
 }
