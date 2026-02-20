@@ -1,0 +1,38 @@
+
+name: Deploy via OIDC & SSM
+
+on:
+  push:
+    branches: [ main, develop ]
+
+permissions:
+  id-token: write   # Required for requesting the JWT
+  contents: read    # Required for actions/checkout
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Build and Publish .NET
+        run: |
+          dotnet publish -c Release -o ./publish
+          # In a real POC, you would zip this and upload to S3.
+          # For a simple script, we will pull the latest code on the server.
+
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["cd /var/www/webapp", "git pull origin main", "dotnet publish -c Release", "sudo systemctl restart webapp"]' \
+            --region us-east-1
