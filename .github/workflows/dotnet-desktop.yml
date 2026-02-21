@@ -3,7 +3,7 @@ name: Deploy via OIDC & SSM
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, develop ]
 
 permissions:
   id-token: write   # Required for requesting the JWT
@@ -12,10 +12,22 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'test' }}
+    environment: ${{ github.ref == 'refs/heads/master' && 'development' || 'test' }}
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v5.1.0
+        with:
+          dotnet-version: 8.0.x
+
+      
+      - name: Build and Publish .NET
+        run: |
+          dotnet publish -c Release -o ./publish
+        
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -23,16 +35,22 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Build and Publish .NET
+      - name: Archive the artifact
         run: |
-          dotnet publish -c Release -o ./publish
-          # In a real POC, you would zip this and upload to S3.
-          # For a simple script, we will pull the latest code on the server.
+          cd publish
+          zip -r ../app-${{ github.sha }}.zip .
 
-      - name: Deploy via SSM
+      - name: Upload artifact to S3
         run: |
-          aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["cd /var/www/webapp", "git pull origin main", "dotnet publish -c Release", "sudo systemctl restart webapp"]' \
-            --region us-east-1
+          aws s3api put-object \
+            --bucket adarsh4ce-bucket \
+            --key ${{ github.ref_name }}/app-${{ github.sha }}.zip \
+            --body app-${{ github.sha }}.zip
+
+      # - name: Deploy via SSM
+      #   run: |
+      #     aws ssm send-command \
+      #       --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+      #       --document-name "AWS-RunShellScript" \
+      #       --parameters 'commands=["cd /var/www/webapp", "git pull origin main", "dotnet publish -c Release", "sudo systemctl restart webapp"]' \
+      #       --region us-east-1
