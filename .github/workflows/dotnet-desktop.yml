@@ -15,6 +15,10 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/master' && 'development' || 'test' }}
     
     steps:
+
+      - name: Print GitHub context
+        run: echo "${{ github.repository }} - ${{ github.ref }}"
+        
       - name: Checkout code
         uses: actions/checkout@v4
 
